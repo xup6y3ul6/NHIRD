@@ -1,0 +1,179 @@
+---
+title: "read_data"
+author: "Nick Lin"
+date: "6/26/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Fundamental part
+
+## Version and setting
+
+First for all
+```{r}
+sessionInfo()
+```
+
+設置成 UTF-8
+- Tools > Global Options > Code > Saving > Default text encoding > UTF-8
+
+
+## Rstudio environment
+
+- Four panels
+  + Script
+  + Console
+  + Environment, History, Connections, Tuttorial
+  + Files, Plots, Packages, Help, Viewer
+- R project
+- Rmd
+  + Reference
+  + Knit
+
+## Data structure
+
+Vector
+- Atomic vector
+  + Logical
+  + Integer (factor, date)
+  + Double (time)
+  + Character
+  + (vector, matrix, array)
+- List (data.frame, tibble)
+
+
+# Load and write data
+
+## Install related packages
+
+Please update to the newest version.
+```{r}
+# needPackages <- c("tidyverse")
+# install.packages(needPackages)
+
+library(tidyverse) # for data manipulation (https://www.tidyverse.org/)
+library(haven) # for read sas file (https://github.com/tidyverse/haven)
+```
+
+## Get directions and files
+
+### read SAS code
+
+```{r}
+dir("rawdata/sas/")
+data_dirs <- list.dirs(path = "rawdata/sas/", recursive = FALSE)
+health01_files <- list.files(path = data_dirs[1], full.names = TRUE)
+health01_files[1]
+```
+
+```{r}
+d1 <- read_sas(health01_files[2], n_max = 1)
+names(d1)
+spec(d1)
+d1
+
+d1 <- read_sas(health01_files[2], 
+               col_select = HOSP_ID:APPL_TYPE)
+d1
+
+d1_chr <- d1 %>% 
+  mutate(FEE_YM = as.character(FEE_YM))
+d1_chr
+```
+
+### read CSV data
+
+```{r}
+dir("rawdata/csv/")
+data_dirs <- list.dirs(path = "rawdata/csv/", recursive = FALSE)
+health01_files <- list.files(path = data_dirs[1], full.names = TRUE)
+health01_files[1]
+```
+```{r}
+
+df1 <- read_csv(health01_files[1], col_types = .col_type)
+df1
+
+head(df1) # head(df1, 10)
+tail(df1)
+View(df1)
+
+df2 <- read_csv(health01_files[2])
+df2
+
+df3 <- read_csv(health01_files[3])
+```
+
+
+## Read subset of data
+```{r}
+.col_names <- c("ICD9CM_2", "FEE_YM")
+.col_type <- cols_only(HOSP_ID = col_character(),
+                       ICD9CM_2 = col_character(), 
+                       FEE_YM = col_character())
+
+df1 <- read_csv(health01_files[1], col_types = .col_type)
+df1
+```
+
+
+
+
+## Combind data in the same folder
+
+```{r}
+n_files <- 2
+# n_files <- length(health01_list)
+health01_list <- vector(mode = "list", length = n_files)
+
+for (i in 1:n_files) {
+  health01_list[[i]] <- read_csv(health01_files[i], col_types = .col_type)  
+}
+
+health01_df <- bind_rows(health01_list)
+health01_df
+```
+
+### Write csv
+
+```{r}
+write_csv(health01_df, file = "data/health01.csv")
+```
+
+
+
+
+## Exercise
+
+1. 更新所需要的軟體與套件
+2. 嘗試讀清楚上方所用到的程式碼，試著改改看任一個參數會有什麼變化
+  - 例如`[i]`裡頭的`i`改成不同的數值
+  - 更改 for loop
+3. 選出你每筆 data 所需要的 variables (cols) 以及對照資料庫使用手冊所規定的變數型態
+  - character, integer, double, logical, factor, data, ...
+
+
+
+
+
+
+
+
+
+
+# Data manipulation
+
+Reference: []()
+
+## data.frame and tibble
+
+## create, select, subset, remove ...
+
+## dplyr
+
+
+
