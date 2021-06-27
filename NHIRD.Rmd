@@ -1,5 +1,5 @@
 ---
-title: "read_data"
+title: "Data Manipulation for NHIRD"
 author: "Nick Lin"
 date: "6/26/2021"
 output: html_document
@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Fundamental part
+# Fundamental
 
 ## Version and setting
 
@@ -39,11 +39,40 @@ sessionInfo()
 Vector
 - Atomic vector
   + Logical
-  + Integer (factor, date)
-  + Double (time)
+  + Integer (factor, date) \in numeric(number)
+  + Double (time) \in numeric(number)
   + Character
   + (vector, matrix, array)
 - List (data.frame, tibble)
+
+command+option+i / cntl+alt+i
+```{r}
+1+1
+a = c(1L, 2L, 3L) #integer
+a
+typeof(a)
+mode(a)
+
+d = c(3.3, 3.14)
+d
+typeof(d) # vvvv
+mode(d) # xxxx
+
+b = c("ha", 3, "hello") #charcter
+b
+typeof(b)
+
+l = list("a", 3L, 3.24)
+l
+```
+
+## How to use help
+
+```{r}
+help(xxxx)
+?xxxx
+??xxxx
+```
 
 
 # Load and write data
@@ -56,7 +85,7 @@ Please update to the newest version.
 # install.packages(needPackages)
 
 library(tidyverse) # for data manipulation (https://www.tidyverse.org/)
-library(haven) # for read sas file (https://github.com/tidyverse/haven)
+library(haven) # for read sas, spss file (https://github.com/tidyverse/haven)
 ```
 
 ## Get directions and files
@@ -65,40 +94,91 @@ library(haven) # for read sas file (https://github.com/tidyverse/haven)
 
 ```{r}
 dir("rawdata/sas/")
-data_dirs <- list.dirs(path = "rawdata/sas/", recursive = FALSE)
+data_dirs <- list.dirs(path = "rawdata/sas", recursive = FALSE)
+data_dirs
+data_dirs[1]
 health01_files <- list.files(path = data_dirs[1], full.names = TRUE)
-health01_files[1]
+health01_files
+health01_files[2]
 ```
+
+
+haven::read_sas()
+```{r}
+d1 <- read_sas(health01_files[1], n_max = 5)
+names(d1)
+dim(d1)
+d1
+
+d2 <- read_sas(health01_files[1], skip = 5, n_max = 5)
+d2
+
+d3 <- read_sas(health01_files[1]) # n_max = inf
+d3
+```
+
 
 ```{r}
-d1 <- read_sas(health01_files[2], n_max = 1)
-names(d1)
-spec(d1)
+d1 <- read_sas(health01_files[1], 
+               col_select = HOSP_ID:SEQ_NO)
 d1
 
-d1 <- read_sas(health01_files[2], 
-               col_select = HOSP_ID:APPL_TYPE)
-d1
+d2 <- read_sas(health01_files[1], 
+               col_select = c(HOSP_ID:APPL_DATE, DRUG_DOT, CHR_DAYS),
+               n_max = 10)
+d2
 
-d1_chr <- d1 %>% 
-  mutate(FEE_YM = as.character(FEE_YM))
-d1_chr
+
+a = c(1, 4, 9)
+print(sum(sqrt(sqrt(a))))
+a %>% sqrt() %>% sqrt() %>% sum() %>% print()
+
+d2_changeType <- d2 %>% 
+  mutate(FEE_YM = zoo::as.yearmon(FEE_YM, format = "%Y%m", tryformat), 
+         APPL_TYPE = as.integer(APPL_TYPE),
+         DRUG_DOT = as.character(DRUG_DOT))
+d2_changeType
+
+# d2_changeType <- mutate(d2, ......)
+
+d2
 ```
+POXIClt / POXICct
+
+Date 2020/02/03
+Time 12:15:30
+DateTime 2020/02/03 12:15:30
+
+```{r}
+d3
+
+write_csv(d3, "data/test1.csv")
+
+d33 <- read_csv("data/test1.csv")
+d33
+```
+
+
+
+
 
 ### read CSV data
 
 ```{r}
 dir("rawdata/csv/")
 data_dirs <- list.dirs(path = "rawdata/csv/", recursive = FALSE)
+data_dirs
 health01_files <- list.files(path = data_dirs[1], full.names = TRUE)
+health01_files
 health01_files[1]
 ```
+
 ```{r}
 
-df1 <- read_csv(health01_files[1], col_types = .col_type)
+df1 <- read_csv(health01_files[1])
 df1
 
-head(df1) # head(df1, 10)
+head(df1, 1) # head(df1, 10)
 tail(df1)
 View(df1)
 
@@ -111,19 +191,70 @@ df3 <- read_csv(health01_files[3])
 
 ## Read subset of data
 ```{r}
-.col_names <- c("ICD9CM_2", "FEE_YM")
 .col_type <- cols_only(HOSP_ID = col_character(),
                        ICD9CM_2 = col_character(), 
                        FEE_YM = col_character())
 
-df1 <- read_csv(health01_files[1], col_types = .col_type)
+df1 <- read_csv(health01_files[5], col_types = .col_type,
+                n_max = 10)
 df1
+```
+```{r}
+write_csv(df1, "data/health01_new.csv")
+df11 <- read_csv("data/health01_new.csv")
+df11
 ```
 
 
 
+## 0627_Exercise
+
+0. sessionInfo()
+1. 更新所需要的軟體與套件，確認版本是最新的
+2. 整理好你的工作資料夾，包含
+  - rawdata
+    - csv
+      - Health-01
+      - Health-02
+      - ...
+    - sas
+      - Health-01
+      - Health-02
+      - ...
+  - data 
+3. 嘗試讀清楚上方所用到的程式碼，試著改改看任一個參數會有什麼變化
+  - 例如`[i]`裡頭的`i`改成不同的數值
+  - 
+4. 選出你每筆 data 所需要的 variables (cols) 以及對照資料庫使用手冊所規定的變數型態
+  - character, integer, double, logical, factor, date, ...
+
+例如：
+
+health01
+- HOSP_ID = col_character()
+- ICD9CM_2 = col_character()
+...
+
+health02
+
+
+health03
+
+5. 有空的話看一下 Rmarkdown 的介紹：https://rmarkdown.rstudio.com/lesson-1.html
+
+
 
 ## Combind data in the same folder
+
+
+for loop
+
+```{r}
+for (i in 1:10) {
+  print(i)
+}
+```
+
 
 ```{r}
 n_files <- 2
@@ -143,25 +274,6 @@ health01_df
 ```{r}
 write_csv(health01_df, file = "data/health01.csv")
 ```
-
-
-
-
-## Exercise
-
-1. 更新所需要的軟體與套件
-2. 嘗試讀清楚上方所用到的程式碼，試著改改看任一個參數會有什麼變化
-  - 例如`[i]`裡頭的`i`改成不同的數值
-  - 更改 for loop
-3. 選出你每筆 data 所需要的 variables (cols) 以及對照資料庫使用手冊所規定的變數型態
-  - character, integer, double, logical, factor, data, ...
-
-
-
-
-
-
-
 
 
 
